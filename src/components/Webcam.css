@@ -1,0 +1,77 @@
+.camera_Wrapper {
+    max-width: 700px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .camera_Wrapper .p-4 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .camera_Wrapper video,
+  .camera_Wrapper img,
+  .camera_Wrapper canvas {
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    max-width: 100%;
+    height: auto !important; /* override inline height for responsiveness */
+  }
+  
+  .cropper {
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    max-width: 100%;
+  }
+  
+  .camera_Wrapper button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .camera_Wrapper button.bg-blue-600 {
+    background-color: #2563eb;
+  }
+  
+  .camera_Wrapper button.bg-blue-600:hover {
+    background-color: #1e40af;
+  }
+  
+  .camera_Wrapper button.bg-green-600 {
+    background-color: #16a34a;
+  }
+  
+  .camera_Wrapper button.bg-green-600:hover {
+    background-color: #166534;
+  }
+  
+  .camera_Wrapper button.bg-gray-400 {
+    background-color: #9ca3af;
+  }
+  
+  .camera_Wrapper button.bg-gray-400:hover {
+    background-color: #6b7280;
+  }
+  
+  .flex.gap-2 {
+    display: flex;
+    gap: 12px;
+  }
+  
+  h3 {
+    margin-bottom: 8px;
+    font-size: 1.25rem;
+    color: #111827;
+    text-align: center;
+  }
+  
