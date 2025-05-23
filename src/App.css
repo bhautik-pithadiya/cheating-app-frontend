@@ -8,6 +8,15 @@ button {
   cursor: pointer;
 }
 
+.app-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* vertical center */
+  align-items: center;     /* horizontal center */
+  background: #f9f9f9;
+}
+
 .toggle-buttons {
   display: flex;
   justify-content: center;

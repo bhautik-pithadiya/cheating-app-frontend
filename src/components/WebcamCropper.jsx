@@ -21,12 +21,25 @@ const WebcamCropper = ({ switchToChat }) => {
     });
   }, []);
 
-  const switchCamera = () => {
-  
-      const currentIndex = videoDevices.findIndex((device) => device.deviceId === deviceId);
+  const switchCamera = async () => {
+    try {
+      if (videoDevices.length <= 1) {
+        console.log('No additional cameras found');
+        return;
+      }
+      
+      const currentIndex = videoDevices.findIndex(device => device.deviceId === deviceId);
       const nextIndex = (currentIndex + 1) % videoDevices.length;
       setDeviceId(videoDevices[nextIndex].deviceId);
-    
+      
+      // Force a re-render of the Webcam component
+      if (webcamRef.current) {
+        const track = webcamRef.current.video.srcObject.getTracks()[0];
+        track.stop();
+      }
+    } catch (error) {
+      console.error('Error switching camera:', error);
+    }
   };
 
   const capture = () => {
@@ -86,7 +99,11 @@ const WebcamCropper = ({ switchToChat }) => {
               className="rounded shadow"
               width={640}
               height={480}
-              videoConstraints={{ deviceId: deviceId ? { exact: deviceId } : undefined }}
+              videoConstraints={{
+                deviceId: deviceId,
+                width: 640,
+                height: 480,
+              }}
             />
             <div className="flex gap-2">
               <button onClick={capture} className="bg-blue-600 text-white px-4 py-2 rounded">
