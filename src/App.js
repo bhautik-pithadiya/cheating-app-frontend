@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import WebcamCropper from './components/WebcamCropper';
 import ChatBot from './components/ChatBot';
+import Login from './components/Login';
+import './App.css';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('camera'); // 'camera' or 'chat'
   const [latestAnswer, setLatestAnswer] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  console.log('App rendered, isLoggedIn:', isLoggedIn);
 
   // Called from WebcamCropper after getting answer
   const handleSwitchToChat = (answer) => {
@@ -12,6 +17,12 @@ const App = () => {
     setActiveTab('chat');
   };
 
+  if (!isLoggedIn) {
+    console.log('Rendering Login component');
+    return <Login onLogin={setIsLoggedIn} />;
+  }
+
+  console.log('Rendering main app content');
   return (
     <div className="app-wrapper">
       <div className="toggle-buttons" style={{ marginBottom: '16px' }}>
