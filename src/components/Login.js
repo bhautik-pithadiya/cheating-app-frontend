@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createSession } from '../utils/session';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
@@ -27,6 +28,8 @@ const Login = ({ onLogin }) => {
     console.log('Login attempt with:', credentials);
     if (credentials.username === validUsername && credentials.password === validPassword) {
       console.log('Login successful');
+      // Create a new session
+      createSession();
       onLogin(true);
       setError('');
     } else {

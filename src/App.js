@@ -1,64 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import './App.css';
+import Login from './components/Login';
 import WebcamCropper from './components/WebcamCropper';
 import ChatBot from './components/ChatBot';
-import Login from './components/Login';
-import './App.css';
+import { isSessionValid, clearSession } from './utils/session';
 
-const App = () => {
-  const [activeTab, setActiveTab] = useState('camera'); // 'camera' or 'chat'
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // Set to true to bypass login
+  const [activeTab, setActiveTab] = useState('camera');
+  const [isMobile, setIsMobile] = useState(false);
   const [latestAnswer, setLatestAnswer] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  console.log('App rendered, isLoggedIn:', isLoggedIn);
+  useEffect(() => {
+    // Check if device is mobile
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  }, []);
 
-  // Called from WebcamCropper after getting answer
-  const handleSwitchToChat = (answer) => {
-    setLatestAnswer(answer);
-    setActiveTab('chat');
+  const handleLogout = () => {
+    clearSession();
+    setIsLoggedIn(false);
   };
 
+  // Comment out the login check
+  /*
   if (!isLoggedIn) {
-    console.log('Rendering Login component');
-    return <Login onLogin={setIsLoggedIn} />;
+    return <Login onLogin={() => setIsLoggedIn(true)} />;
   }
+  */
 
-  console.log('Rendering main app content');
   return (
-    <div className="app-wrapper">
-      <div className="toggle-buttons" style={{ marginBottom: '16px' }}>
+    <div className="App">
+      <div className="tab-container">
         <button
+          className={`tab-button ${activeTab === 'camera' ? 'active' : ''}`}
+          onClick={() => setActiveTab('camera')}
+        >
+          Camera
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'chat' ? 'active' : ''}`}
           onClick={() => setActiveTab('chat')}
-          style={{
-            backgroundColor: activeTab === 'chat' ? '#2563eb' : '#ccc',
-            color: activeTab === 'chat' ? 'white' : 'black',
-            padding: '8px 16px',
-            marginRight: '8px',
-            borderRadius: '6px',
-            border: 'none',
-            cursor: 'pointer',
-          }}
         >
           Chat
         </button>
         <button
-          onClick={() => setActiveTab('camera')}
-          style={{
-            backgroundColor: activeTab === 'camera' ? '#2563eb' : '#ccc',
-            color: activeTab === 'camera' ? 'white' : 'black',
-            padding: '8px 16px',
-            borderRadius: '6px',
-            border: 'none',
-            cursor: 'pointer',
-          }}
+          className="tab-button logout-button"
+          onClick={handleLogout}
         >
-          Camera
+          Logout
         </button>
       </div>
 
-      {activeTab === 'camera' && <WebcamCropper switchToChat={handleSwitchToChat} />}
-      {activeTab === 'chat' && <ChatBot initialAnswer={latestAnswer} />}
+      <div className="content-container">
+        {activeTab === 'camera' ? (
+          <WebcamCropper 
+            switchToChat={(answer) => {
+              setLatestAnswer(answer);
+              setActiveTab('chat');
+            }} 
+            isMobile={isMobile} 
+          />
+        ) : (
+          <ChatBot initialAnswer={latestAnswer} />
+        )}
+      </div>
     </div>
   );
-};
+}
 
 export default App;
