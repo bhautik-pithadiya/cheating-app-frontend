@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { Cropper, RectangleStencil } from 'react-advanced-cropper';
 import 'react-advanced-cropper/dist/style.css';
-import './Webcam.css'
+import './Webcam.css';
+
 const WebcamCropper = ({ switchToChat }) => {
   const webcamRef = useRef(null);
   const cropperRef = useRef(null);
@@ -10,15 +11,66 @@ const WebcamCropper = ({ switchToChat }) => {
   const [croppedImage, setCroppedImage] = useState(null);
   const [videoDevices, setVideoDevices] = useState([]);
   const [deviceId, setDeviceId] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then((devices) => {
-      const videoInputDevices = devices.filter((device) => device.kind === 'videoinput');
-      setVideoDevices(videoInputDevices);
-      if (videoInputDevices.length > 0) {
-        setDeviceId(videoInputDevices[0].deviceId);
+    const checkIncognito = async () => {
+      try {
+        // Try to access storage in incognito
+        const storage = window.localStorage;
+        storage.setItem('test', 'test');
+        storage.removeItem('test');
+        return false;
+      } catch (e) {
+        return true;
       }
-    });
+    };
+
+    const initializeCamera = async () => {
+      try {
+        // Check if device is mobile
+        const mobileCheck = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        setIsMobile(mobileCheck);
+        console.log('Is mobile device:', mobileCheck);
+
+        // Check if in incognito mode
+        const isIncognito = await checkIncognito();
+        if (isIncognito) {
+          setError('Camera access is not available in incognito mode. Please use regular Chrome mode.');
+          return;
+        }
+
+        // Get available cameras
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        console.log('Available devices:', devices);
+        
+        const videoInputDevices = devices.filter((device) => device.kind === 'videoinput');
+        console.log('Video devices:', videoInputDevices);
+        
+        setVideoDevices(videoInputDevices);
+        
+        if (videoInputDevices.length > 0) {
+          setDeviceId(videoInputDevices[0].deviceId);
+        } else {
+          console.log('No video devices found');
+          setError('No camera found on your device');
+        }
+      } catch (err) {
+        console.error('Error initializing camera:', err);
+        if (err.name === 'NotAllowedError') {
+          setError('Camera access was denied. Please allow camera access in your browser settings.');
+        } else if (err.name === 'NotFoundError') {
+          setError('No camera found on your device.');
+        } else if (err.name === 'NotReadableError') {
+          setError('Your camera is already in use by another application.');
+        } else {
+          setError('Error accessing camera: ' + err.message);
+        }
+      }
+    };
+
+    initializeCamera();
   }, []);
 
   const switchCamera = async () => {
@@ -30,27 +82,40 @@ const WebcamCropper = ({ switchToChat }) => {
       
       const currentIndex = videoDevices.findIndex(device => device.deviceId === deviceId);
       const nextIndex = (currentIndex + 1) % videoDevices.length;
-      setDeviceId(videoDevices[nextIndex].deviceId);
+      const nextDevice = videoDevices[nextIndex];
+      console.log('Switching to camera:', nextDevice);
       
-      // Force a re-render of the Webcam component
+      setDeviceId(nextDevice.deviceId);
+      
       if (webcamRef.current) {
         const track = webcamRef.current.video.srcObject.getTracks()[0];
         track.stop();
       }
     } catch (error) {
       console.error('Error switching camera:', error);
+      setError('Error switching camera: ' + error.message);
     }
   };
 
   const capture = () => {
-    const screenshot = webcamRef.current.getScreenshot();
-    setImageSrc(screenshot);
+    try {
+      const screenshot = webcamRef.current.getScreenshot();
+      setImageSrc(screenshot);
+    } catch (error) {
+      console.error('Error capturing image:', error);
+      setError('Error capturing image: ' + error.message);
+    }
   };
 
   const crop = () => {
-    const canvas = cropperRef.current?.getCanvas();
-    if (canvas) {
-      setCroppedImage(canvas.toDataURL());
+    try {
+      const canvas = cropperRef.current?.getCanvas();
+      if (canvas) {
+        setCroppedImage(canvas.toDataURL());
+      }
+    } catch (error) {
+      console.error('Error cropping image:', error);
+      setError('Error cropping image: ' + error.message);
     }
   };
 
@@ -84,49 +149,92 @@ const WebcamCropper = ({ switchToChat }) => {
       if (switchToChat) switchToChat();
     } catch (error) {
       console.error('Image upload failed:', error);
+      setError('Error uploading image: ' + error.message);
     }
   };
+
+  if (error) {
+    return (
+      <div className="camera_Wrapper">
+        <div className="p-4 space-y-4">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-4 text-red-600">Error</h3>
+            <p className="text-gray-600">{error}</p>
+            <div className="mt-4 space-y-2">
+              <button 
+                onClick={() => window.location.reload()} 
+                className="bg-blue-600 text-white px-4 py-2 rounded block w-full"
+              >
+                Retry
+              </button>
+              <p className="text-sm text-gray-500 mt-2">
+                If you're using incognito mode, please:
+                <br />1. Open Chrome in regular mode
+                <br />2. Allow camera permissions
+                <br />3. Try again
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="camera_Wrapper">
       <div className="p-4 space-y-4">
         {!imageSrc ? (
           <>
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              className="rounded shadow"
-              width={640}
-              height={480}
-              videoConstraints={{
-                deviceId: deviceId,
-                width: 640,
-                height: 480,
-              }}
-            />
+            <div className="webcam-container">
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                className="rounded shadow"
+                width={640}
+                height={480}
+                videoConstraints={{
+                  deviceId: deviceId ? { exact: deviceId } : undefined,
+                  width: { ideal: 640 },
+                  height: { ideal: 480 },
+                  facingMode: isMobile ? { ideal: 'environment' } : { ideal: 'user' }
+
+                }}
+                playsInline
+                onUserMediaError={(err) => {
+                  console.error('Webcam error:', err);
+                  if (err.name === 'NotAllowedError') {
+                    setError('Camera access was denied. Please allow camera access in your browser settings.');
+                  } else {
+                    setError('Error accessing camera: ' + err.message);
+                  }
+                }}
+              />
+            </div>
             <div className="flex gap-2">
               <button onClick={capture} className="bg-blue-600 text-white px-4 py-2 rounded">
                 Capture Image
               </button>
-       
+              {videoDevices.length > 1 && (
                 <button onClick={switchCamera} className="bg-yellow-500 text-white px-4 py-2 rounded">
                   Switch Camera
                 </button>
-            
+              )}
             </div>
           </>
         ) : (
           <>
-            <Cropper
-              ref={cropperRef}
-              src={imageSrc}
-              stencilComponent={RectangleStencil}
-              className="cropper"
-              imageRestriction="none"
-              autoZoom
-              style={{ height: 480, width: 640 }}
-            />
+            <div className="cropper-container">
+              <Cropper
+                ref={cropperRef}
+                src={imageSrc}
+                stencilComponent={RectangleStencil}
+                className="cropper"
+                imageRestriction="none"
+                autoZoom
+                style={{ height: 480, width: 640 }}
+              />
+            </div>
             <div className="flex gap-2">
               <button onClick={crop} className="bg-green-600 text-white px-4 py-2 rounded">
                 Crop
@@ -144,9 +252,14 @@ const WebcamCropper = ({ switchToChat }) => {
         )}
 
         {croppedImage && (
-          <div>
+          <div className="cropped-image-container">
             <h3 className="font-semibold text-lg">Cropped Image:</h3>
-            <img src={croppedImage} alt="Cropped" className="rounded mt-2 shadow" />
+            <img 
+              src={croppedImage} 
+              alt="Cropped" 
+              className="rounded mt-2 shadow" 
+              style={{ maxWidth: '100%', height: 'auto' }} 
+            />
           </div>
         )}
       </div>

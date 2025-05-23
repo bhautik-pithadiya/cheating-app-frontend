@@ -2,49 +2,75 @@ body {
   margin: 0;
   font-family: Arial, sans-serif;
   background-color: #f3f4f6;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button {
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app-wrapper {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* vertical center */
-  align-items: center;     /* horizontal center */
+  align-items: center;
   background: #f9f9f9;
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
 }
 
 .toggle-buttons {
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 10px;
+  margin-bottom: 15px;
+  width: 100%;
+  max-width: 400px;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
-.toggle-buttons button {
-  padding: 10px 20px;
-  border-radius: 6px;
+.tab-button {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 8px;
   border: 1px solid #ccc;
   background-color: white;
   font-weight: bold;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  min-width: 120px;
+  max-width: 200px;
 }
 
-.toggle-buttons button.active {
+.tab-button.active {
   background-color: #2563eb;
   color: white;
   border-color: #2563eb;
 }
 
+.content-wrapper {
+  width: 100%;
+  max-width: 700px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.camera-container,
 .chat-container {
-  max-width: 400px;
   width: 100%;
   background: white;
-  padding: 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
 .chat-messages {
@@ -53,6 +79,9 @@ button {
   border: 1px solid #ddd;
   padding: 10px;
   margin-bottom: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 .chat-message {
@@ -61,6 +90,7 @@ button {
   border-radius: 6px;
   font-size: 14px;
   max-width: 80%;
+  word-wrap: break-word;
 }
 
 .chat-message.bot {
@@ -77,19 +107,75 @@ button {
 .chat-input {
   display: flex;
   gap: 10px;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 .chat-input input {
   flex: 1;
-  padding: 8px;
-  border-radius: 6px;
+  padding: 12px;
+  border-radius: 8px;
   border: 1px solid #ccc;
+  font-size: 16px;
+  min-width: 0;
 }
 
 .chat-input button {
-  padding: 8px 16px;
+  padding: 12px 20px;
   background-color: #2563eb;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .app-wrapper {
+    padding: 5px;
+  }
+
+  .toggle-buttons {
+    padding: 0 5px;
+    margin-bottom: 10px;
+  }
+
+  .tab-button {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+
+  .content-wrapper {
+    padding: 0 5px;
+  }
+
+  .chat-messages {
+    height: 200px;
+  }
+
+  .chat-input {
+    padding: 5px;
+  }
+
+  .chat-input input {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .chat-input button {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toggle-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tab-button {
+    max-width: none;
+  }
 }
