@@ -30,4 +30,4 @@ USER node
 EXPOSE 5000
 
 # Start the app using our HTTPS server
-CMD ["node", "server.js"]
+CMD ["npm", "run","build"]
