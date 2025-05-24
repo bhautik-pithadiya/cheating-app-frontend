@@ -25,5 +25,5 @@ app.get('*', (req, res) => {
 
 // Create HTTPS server
 https.createServer(options, app).listen(PORT, () => {
-  console.log(`Server is running at https://localhost:${PORT}`);
+  console.log(`Server is running at https://0.0.0.0:${PORT}`);
 });
