@@ -13,6 +13,7 @@ const WebcamCropper = ({ switchToChat }) => {
   const [videoDevices, setVideoDevices] = useState([]);
   const [deviceId, setDeviceId] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [facingMode, setFacingMode] = useState('user');
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -29,18 +30,35 @@ const WebcamCropper = ({ switchToChat }) => {
       }
 
       try {
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        setIsMobile(isMobile);
+        const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        setIsMobile(isMobileDevice);
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Get initial camera access
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: isMobileDevice ? 'environment' : 'user'
+          } 
+        });
         stream.getTracks().forEach(track => track.stop()); // Clean up the test stream
 
+        // Get available video devices
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoInputDevices = devices.filter((d) => d.kind === 'videoinput');
 
         if (videoInputDevices.length > 0) {
           setVideoDevices(videoInputDevices);
-          setDeviceId(videoInputDevices[0].deviceId);
+          // For mobile, prefer the back camera initially
+          if (isMobileDevice) {
+            const backCamera = videoInputDevices.find(device => 
+              device.label.toLowerCase().includes('back') || 
+              device.label.toLowerCase().includes('rear')
+            );
+            setDeviceId(backCamera ? backCamera.deviceId : videoInputDevices[0].deviceId);
+            setFacingMode('environment');
+          } else {
+            setDeviceId(videoInputDevices[0].deviceId);
+            setFacingMode('user');
+          }
         } else {
           setError('No camera found on your device');
         }
@@ -63,21 +81,53 @@ const WebcamCropper = ({ switchToChat }) => {
 
   const switchCamera = async () => {
     try {
-      if (videoDevices.length <= 1) {
-        console.log('No additional cameras found');
-        return;
+      if (isMobile) {
+        // For mobile devices, toggle between front and back cameras
+        const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
+        setFacingMode(newFacingMode);
+        
+        // Find the appropriate camera device
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoInputDevices = devices.filter((d) => d.kind === 'videoinput');
+        
+        if (newFacingMode === 'environment') {
+          const backCamera = videoInputDevices.find(device => 
+            device.label.toLowerCase().includes('back') || 
+            device.label.toLowerCase().includes('rear')
+          );
+          if (backCamera) {
+            setDeviceId(backCamera.deviceId);
+          }
+        } else {
+          const frontCamera = videoInputDevices.find(device => 
+            device.label.toLowerCase().includes('front') || 
+            device.label.toLowerCase().includes('user')
+          );
+          if (frontCamera) {
+            setDeviceId(frontCamera.deviceId);
+          }
+        }
+      } else {
+        // For desktop, cycle through available cameras
+        if (videoDevices.length <= 1) {
+          console.log('No additional cameras found');
+          return;
+        }
+        
+        const currentIndex = videoDevices.findIndex(device => device.deviceId === deviceId);
+        const nextIndex = (currentIndex + 1) % videoDevices.length;
+        const nextDevice = videoDevices[nextIndex];
+        setDeviceId(nextDevice.deviceId);
       }
       
-      const currentIndex = videoDevices.findIndex(device => device.deviceId === deviceId);
-      const nextIndex = (currentIndex + 1) % videoDevices.length;
-      const nextDevice = videoDevices[nextIndex];
-      console.log('Switching to camera:', nextDevice);
-      
-      setDeviceId(nextDevice.deviceId);
-      
-      if (webcamRef.current) {
-        const track = webcamRef.current.video.srcObject.getTracks()[0];
-        track.stop();
+      // Safely stop the current video track
+      if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.srcObject) {
+        const tracks = webcamRef.current.video.srcObject.getTracks();
+        tracks.forEach(track => {
+          if (track && typeof track.stop === 'function') {
+            track.stop();
+          }
+        });
       }
     } catch (error) {
       console.error('Error switching camera:', error);
@@ -185,7 +235,7 @@ const WebcamCropper = ({ switchToChat }) => {
                   deviceId: deviceId ? { exact: deviceId } : undefined,
                   width: { ideal: 640 },
                   height: { ideal: 480 },
-                  facingMode: isMobile ? { ideal: 'environment' } : { ideal: 'user' },
+                  facingMode: facingMode,
                   aspectRatio: 1.333333333
                 }}
                 playsInline
@@ -204,11 +254,13 @@ const WebcamCropper = ({ switchToChat }) => {
               <button onClick={capture} className="bg-blue-600 text-white px-4 py-2 rounded">
                 Capture Image
               </button>
-              {videoDevices.length > 1 && (
-                <button onClick={switchCamera} className="bg-yellow-500 text-white px-4 py-2 rounded">
-                  Switch Camera
-                </button>
-              )}
+              <button 
+                onClick={switchCamera} 
+                className="bg-yellow-500 text-white px-4 py-2 rounded"
+                title={isMobile ? "Switch between front and back cameras" : "Switch camera"}
+              >
+                {isMobile ? "Flip Camera" : "Switch Camera"}
+              </button>
             </div>
           </>
         ) : (
