@@ -6,12 +6,11 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - NODE_ENV=production
-      - DEBUG=express:*
+      - NODE_ENV=development
+      - PORT=5000
     volumes:
-      - ./ssl:/app/ssl
-      - ./build:/app/build
-      - ./public:/app/public
+      - .:/app
+      - /app/node_modules
     restart: unless-stopped
     logging:
       driver: "json-file"

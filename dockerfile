@@ -7,27 +7,17 @@ WORKDIR /app
 # Copy package.json and install dependencies
 COPY package*.json ./
 RUN npm install
+RUN npm install serve
+
 
 # Copy the rest of the app
 COPY . .
 
-# Build the app
-RUN npm run build
+# Set the port environment variable
+ENV PORT=5000
 
-# Create SSL directory and copy certificates
-RUN mkdir -p ssl
-COPY ssl/cert.pem ssl/
-COPY ssl/key.pem ssl/
-
-# Ensure build and public directories exist and have proper permissions
-RUN mkdir -p build public && \
-    chown -R node:node /app
-
-# Switch to non-root user
-USER node
-
-# Expose the HTTPS port
+# Expose the port
 EXPOSE 5000
 
-# Start the app using our HTTPS server
-CMD ["node", "server.js"]
+# Start the app using npm
+CMD ["npm", "start"]
