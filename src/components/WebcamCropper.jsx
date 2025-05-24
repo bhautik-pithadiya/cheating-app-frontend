@@ -18,28 +18,50 @@ const WebcamCropper = ({ switchToChat }) => {
 
   useEffect(() => {
     const initializeCamera = async () => {
-      // Check if we're in a secure context
-      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-        setError('Camera access requires HTTPS. Please use a secure connection.');
-        return;
-      }
-
-      if (typeof window === 'undefined' || !navigator.mediaDevices?.enumerateDevices) {
-        setError('Camera not supported in this environment. Please ensure you are using a modern browser with camera permissions.');
-        return;
-      }
-
       try {
+        // Check if we're in a secure context
+        if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+          setError('Camera access requires HTTPS. Please use a secure connection.');
+          return;
+        }
+
+        // Check for browser support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          // Fallback for older browsers
+          navigator.mediaDevices = {};
+          navigator.mediaDevices.getUserMedia = function(constraints) {
+            const getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+            
+            if (!getUserMedia) {
+              return Promise.reject(new Error('getUserMedia is not implemented in this browser'));
+            }
+
+            return new Promise((resolve, reject) => {
+              getUserMedia.call(navigator, constraints, resolve, reject);
+            });
+          };
+        }
+
         const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         setIsMobile(isMobileDevice);
 
-        // Get initial camera access
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: isMobileDevice ? 'environment' : 'user'
-          } 
-        });
-        stream.getTracks().forEach(track => track.stop()); // Clean up the test stream
+        // Get initial camera access with fallback options
+        const constraints = {
+          video: {
+            facingMode: isMobileDevice ? 'environment' : 'user',
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          }
+        };
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          stream.getTracks().forEach(track => track.stop()); // Clean up the test stream
+        } catch (err) {
+          // If the first attempt fails, try with basic constraints
+          const basicStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          basicStream.getTracks().forEach(track => track.stop());
+        }
 
         // Get available video devices
         const devices = await navigator.mediaDevices.enumerateDevices();
