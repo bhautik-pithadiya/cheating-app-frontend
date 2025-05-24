@@ -28,47 +28,30 @@ const WebcamCropper = ({ switchToChat }) => {
     };
 
     const initializeCamera = async () => {
+      if (typeof window === 'undefined' || !navigator.mediaDevices?.enumerateDevices) {
+        setError('Camera not supported in this environment.');
+        return;
+      }
+    
       try {
-        // Check if device is mobile
-        const mobileCheck = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        setIsMobile(mobileCheck);
-        console.log('Is mobile device:', mobileCheck);
-
-        // Check if in incognito mode
-        const isIncognito = await checkIncognito();
-        if (isIncognito) {
-          setError('Camera access is not available in incognito mode. Please use regular Chrome mode.');
-          return;
-        }
-
-        // Get available cameras
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        setIsMobile(isMobile);
+    
         const devices = await navigator.mediaDevices.enumerateDevices();
-        console.log('Available devices:', devices);
-        
-        const videoInputDevices = devices.filter((device) => device.kind === 'videoinput');
-        console.log('Video devices:', videoInputDevices);
-        
-        setVideoDevices(videoInputDevices);
-        
+        const videoInputDevices = devices.filter((d) => d.kind === 'videoinput');
+    
         if (videoInputDevices.length > 0) {
+          setVideoDevices(videoInputDevices);
           setDeviceId(videoInputDevices[0].deviceId);
         } else {
-          console.log('No video devices found');
           setError('No camera found on your device');
         }
       } catch (err) {
-        console.error('Error initializing camera:', err);
-        if (err.name === 'NotAllowedError') {
-          setError('Camera access was denied. Please allow camera access in your browser settings.');
-        } else if (err.name === 'NotFoundError') {
-          setError('No camera found on your device.');
-        } else if (err.name === 'NotReadableError') {
-          setError('Your camera is already in use by another application.');
-        } else {
-          setError('Error accessing camera: ' + err.message);
-        }
+        console.error('Camera error:', err);
+        setError('Error accessing camera: ' + err.message);
       }
     };
+    
 
     initializeCamera();
   }, []);
