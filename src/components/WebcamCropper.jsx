@@ -3,6 +3,7 @@ import Webcam from 'react-webcam';
 import { Cropper, RectangleStencil } from 'react-advanced-cropper';
 import 'react-advanced-cropper/dist/style.css';
 import './Webcam.css';
+import 'webrtc-adapter';
 
 const WebcamCropper = ({ switchToChat }) => {
   const webcamRef = useRef(null);
@@ -15,31 +16,28 @@ const WebcamCropper = ({ switchToChat }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const checkIncognito = async () => {
-      try {
-        // Try to access storage in incognito
-        const storage = window.localStorage;
-        storage.setItem('test', 'test');
-        storage.removeItem('test');
-        return false;
-      } catch (e) {
-        return true;
-      }
-    };
-
     const initializeCamera = async () => {
-      if (typeof window === 'undefined' || !navigator.mediaDevices?.enumerateDevices) {
-        setError('Camera not supported in this environment.');
+      // Check if we're in a secure context
+      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        setError('Camera access requires HTTPS. Please use a secure connection.');
         return;
       }
-    
+
+      if (typeof window === 'undefined' || !navigator.mediaDevices?.enumerateDevices) {
+        setError('Camera not supported in this environment. Please ensure you are using a modern browser with camera permissions.');
+        return;
+      }
+
       try {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         setIsMobile(isMobile);
-    
+
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop()); // Clean up the test stream
+
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoInputDevices = devices.filter((d) => d.kind === 'videoinput');
-    
+
         if (videoInputDevices.length > 0) {
           setVideoDevices(videoInputDevices);
           setDeviceId(videoInputDevices[0].deviceId);
@@ -47,11 +45,18 @@ const WebcamCropper = ({ switchToChat }) => {
           setError('No camera found on your device');
         }
       } catch (err) {
-        console.error('Camera error:', err);
-        setError('Error accessing camera: ' + err.message);
+        console.error('Camera initialization error:', err);
+        if (err.name === 'NotAllowedError') {
+          setError('Camera access was denied. Please allow camera access in your browser settings.');
+        } else if (err.name === 'NotFoundError') {
+          setError('No camera device found.');
+        } else if (err.name === 'NotReadableError') {
+          setError('Camera is already in use by another application.');
+        } else {
+          setError(`Error accessing camera: ${err.message}`);
+        }
       }
     };
-    
 
     initializeCamera();
   }, []);
@@ -180,10 +185,11 @@ const WebcamCropper = ({ switchToChat }) => {
                   deviceId: deviceId ? { exact: deviceId } : undefined,
                   width: { ideal: 640 },
                   height: { ideal: 480 },
-                  facingMode: isMobile ? { ideal: 'environment' } : { ideal: 'user' }
-
+                  facingMode: isMobile ? { ideal: 'environment' } : { ideal: 'user' },
+                  aspectRatio: 1.333333333
                 }}
                 playsInline
+                forceScreenshotSourceSize
                 onUserMediaError={(err) => {
                   console.error('Webcam error:', err);
                   if (err.name === 'NotAllowedError') {

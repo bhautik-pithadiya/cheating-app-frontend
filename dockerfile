@@ -16,6 +16,7 @@ RUN npm run build
 
 # Install serve to serve the production build
 RUN npm install -g serve
+RUN npm install webrtc-adapter
 
 # Expose the port serve uses
 EXPOSE 5000
