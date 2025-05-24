@@ -7,6 +7,14 @@ services:
       - "5000:5000"
     environment:
       - NODE_ENV=production
+      - DEBUG=express:*
     volumes:
       - ./ssl:/app/ssl
+      - ./build:/app/build
+      - ./public:/app/public
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

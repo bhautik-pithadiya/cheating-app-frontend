@@ -19,8 +19,12 @@ RUN mkdir -p ssl
 COPY ssl/cert.pem ssl/
 COPY ssl/key.pem ssl/
 
-# Ensure build and public directories exist
-RUN mkdir -p build public
+# Ensure build and public directories exist and have proper permissions
+RUN mkdir -p build public && \
+    chown -R node:node /app
+
+# Switch to non-root user
+USER node
 
 # Expose the HTTPS port
 EXPOSE 5000
