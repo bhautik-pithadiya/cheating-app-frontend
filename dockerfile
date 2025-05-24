@@ -14,12 +14,16 @@ COPY . .
 # Build the app
 RUN npm run build
 
-# Install serve to serve the production build
-RUN npm install -g serve
-RUN npm install webrtc-adapter
+# Create SSL directory and copy certificates
+RUN mkdir -p ssl
+COPY ssl/cert.pem ssl/
+COPY ssl/key.pem ssl/
 
-# Expose the port serve uses
+# Ensure build and public directories exist
+RUN mkdir -p build public
+
+# Expose the HTTPS port
 EXPOSE 5000
 
-# Start the app
-CMD ["serve", "-s", "build", "-l", "5000"]
+# Start the app using our HTTPS server
+CMD ["node", "server.js"]
