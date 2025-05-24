@@ -1,37 +1,28 @@
-# Dockerfile
+# Use official Node.js base image
+FROM node:18
 
-# Use official Node image to build the React app
-FROM node:18 AS build
-
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json and install dependencies
-COPY package*.json ./
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
 RUN npm install
 
-# Copy the rest of the app source
+# Copy the rest of the app files
 COPY . .
 
-# Build the React app for production
+# Build the React app
 RUN npm run build
 
-# Stage 2: Serve the build folder with a lightweight HTTPS server
-FROM node:18-alpine
+# Install express if you're using server.js
+RUN npm install express
 
-WORKDIR /app
+# Copy SSL certificates from ssl folder in your project to the container root
+COPY ssl/cert.pem ./cert.pem
+COPY ssl/key.pem ./key.pem
 
-# Install serve package globally (to serve static build folder)
-RUN npm install -g serve
-
-# Copy build output from previous stage
-COPY --from=build /app/build ./build
-
-# Copy SSL certificates
-COPY cert.pem ./cert.pem
-COPY key.pem ./key.pem
-
-# Expose port 5000
+# Expose HTTPS port
 EXPOSE 5000
 
-# Start the server with HTTPS
-CMD ["serve", "-s", "build", "-l", "5000", "--ssl-cert", "cert.pem", "--ssl-key", "key.pem"]
+# Run HTTPS server
+CMD ["node", "server.js"]

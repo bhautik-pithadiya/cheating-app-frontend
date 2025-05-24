@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 console.log('Serving static files from:', path.join(__dirname, 'public'));
 
 // Handle all routes with index.html (SPA behavior)
-app.get('*', (req, res) => {
+app.get('/app', (req, res) => {
   const indexPath = path.join(__dirname, 'build', 'index.html');
   console.log('Serving index.html from:', indexPath);
   res.sendFile(indexPath);
